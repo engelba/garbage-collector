@@ -5,6 +5,7 @@
 #define INTERP_H
 
 #define STACK_MAX 256
+#define INITIAL_GC_THRESHOLD 8
 
 // Define the two possibles types
 typedef enum { OBJ_INT, OBJ_PAIR } ObjectType;
@@ -31,10 +32,17 @@ typedef struct {
   Object *stack[STACK_MAX]; // Define our stack of Objects
   int stackSize;
   Object *firstObject;
+
+  // We need to keep track of the number of created object to now when to run
+  // the GC
+  int numObjects;
+  int maxObjects;
 } VM;
 
 // Function that initialize a VM
 VM *initVM();
+void freeVM(VM *vm);
+void gc(VM *vm);
 
 void assert(int condition, const char *message);
 

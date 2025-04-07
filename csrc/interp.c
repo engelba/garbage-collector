@@ -13,6 +13,9 @@ VM *initVM() {
   vm->stackSize = 0;
   vm->firstObject = NULL;
 
+  vm->numObjects = 0;
+  vm->maxObjects = INITIAL_GC_THRESHOLD;
+
   return vm;
 }
 
@@ -25,13 +28,14 @@ Object *newObject(VM *vm, ObjectType type) {
   object->next = vm->firstObject;
   vm->firstObject = object;
 
+  vm->numObjects++;
+
   return object;
 }
 
 void pushStack(VM *vm, Object *obj) {
   assert(vm->stackSize < STACK_MAX, "Stack Overflow");
-  vm->stack[vm->stackSize + 1] = obj;
-  vm->stackSize += 1;
+  vm->stack[vm->stackSize++] = obj;
 }
 
 Object *popStack(VM *vm) {
@@ -79,6 +83,7 @@ void sweep(VM *vm) {
       // Unreachable object
       Object *unreached = *object;
       *object = unreached->next;
+      vm->numObjects--;
       free(unreached);
     } else {
       // Object is reached. Reinit marking for next GC
@@ -89,6 +94,15 @@ void sweep(VM *vm) {
 }
 
 void gc(VM *vm) {
+
   markAll(vm);
   sweep(vm);
+
+  vm->maxObjects = vm->numObjects * 2;
+}
+
+void freeVM(VM *vm) {
+  vm->stackSize = 0;
+  gc(vm);
+  free(vm);
 }
